@@ -1,4 +1,9 @@
+from datetime import datetime, timedelta, timezone
+
+from jose import jwt
 from passlib.context import CryptContext
+
+from app.config import settings
 
 
 pwd_context = CryptContext(
@@ -19,3 +24,27 @@ def verify_password(
         plain_password,
         hashed_password
     )
+
+
+def create_access_token(
+    data: dict,
+    expires_delta: timedelta | None = None
+) -> str:
+    payload = data.copy()
+
+    if expires_delta is not None:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.access_token_expire_minutes
+        )
+
+    payload.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(
+        payload,
+        settings.secret_key,
+        algorithm=settings.algorithm
+    )
+
+    return encoded_jwt
